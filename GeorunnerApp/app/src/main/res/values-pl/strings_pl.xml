@@ -1,0 +1,32 @@
+<resources>
+    <string name="app_name">Georunner</string>
+    <string name="route1">Trasa 1</string>
+    <string name="route2">Trasa 2</string>
+    <string name="route3">Trasa 3</string>
+    <string name="changeRoute">Zmień trasy</string>
+    <string name="clear">Wyczyść</string>
+    <string name="login_btn">Zaloguj</string>
+    <string name="signup_btn">Zarejestruj się</string>
+    <string name="logout">Wyloguj</string>
+    <string name="title">Georunner</string>
+    <string name="version">0.1a</string>
+    <string name="username">Użytkownik</string>
+    <string name="mail">Adres e-mail</string>
+    <string name="password">Hasło</string>
+    <string name="wrong_password">Błędne hasło, spróbuj ponownie</string>
+    <string name="logged_in">Zalogowano pomyślnie</string>
+    <string name="signed_up">Zarejestrowano pomyślnie</string>
+    <string name="registration">Rejestracja</string>
+    <string name="password_repeat">Powtórz hasło</string>
+    <string name="offline">Brak połączenia z internetem</string>
+    <string name="server_offline">Brak połączenia z serwerem</string>
+    <string name="email_req">Wymagany poprawny adres e-mail</string>
+    <string name="password_req">Wymagane hasło</string>
+    <string name="email_pass_wrong">Twój adrese-mail i/lub hasło są nieprawidłowe</string>
+    <string name="username_req">Wymagana nazwa użytkownika</string>
+    <string name="reg_password_req">Hasło musi się składać z co najmniej 6 znaków</string>
+    <string name="reg_password2_req">Hasła muszą się zgadzać</string>
+    <string name="email_exists">Podany adres e-mail jest już zajęty</string>
+
+
+</resources>
