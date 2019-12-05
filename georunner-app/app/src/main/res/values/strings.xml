@@ -1,0 +1,32 @@
+<resources>
+<string name="app_name">Georunner</string>
+<string name="route1">Route 1</string>
+<string name="route2">Route 2</string>
+<string name="route3">Route 3</string>
+<string name="changeRoute">Change routes</string>
+<string name="clear">Clear</string>
+<string name="login_btn">Log in</string>
+<string name="signup_btn">Sign up</string>
+<string name="logout">Logout</string>
+<string name="title">Georunner</string>
+<string name="version">0.1a</string>
+<string name="username">Username</string>
+<string name="mail">E-mail address</string>
+<string name="password">Password</string>
+<string name="wrong_password">Wrong password, try again</string>
+<string name="logged_in">Login successful</string>
+<string name="signed_up">Signup successful</string>
+<string name="registration">Registration</string>
+<string name="password_repeat">Repeat password</string>
+<string name="offline">No internet connection</string>
+<string name="server_offline">No connection with server</string>
+<string name="email_req">E-mail address required</string>
+<string name="password_req">Password required</string>
+<string name="email_pass_wrong">Your e-mail address and/or password are incorrect</string>
+<string name="username_req">Usernme required</string>
+<string name="reg_password_req">Password must be at least 6 characters long</string>
+<string name="reg_password2_req">Passwords must match</string>
+<string name="email_exists">This e-mail address is already in use</string>
+
+
+</resources>
