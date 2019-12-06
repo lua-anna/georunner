@@ -1,0 +1,28 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <!-- "Mark Favorite", should appear as action button if possible -->
+    <item
+        android:id="@+id/route1"
+
+        android:title="@string/route1"
+        app:showAsAction="never"/>
+
+    <item android:id="@+id/route2"
+        android:title="@string/route2"
+        app:showAsAction="never"/>
+
+    <item android:id="@+id/route3"
+        android:title="@string/route3"
+        app:showAsAction="never"/>
+
+    <item android:id="@+id/logout"
+        android:title="@string/logout"
+        app:showAsAction="never"/>
+
+    <item android:id="@+id/clear"
+        android:title="@string/clear"
+        app:showAsAction="ifRoom"/>
+
+</menu>
+
