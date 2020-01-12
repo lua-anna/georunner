@@ -1,14 +1,21 @@
-package com.example.myapplication;
+package org.georunner;
 
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.location.Location;
+import android.location.LocationListener;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
+import android.view.View;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -28,8 +35,12 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
 
+
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.osmdroid.api.IMapView;
+import org.osmdroid.bonuspack.BuildConfig;
 import org.osmdroid.bonuspack.kml.KmlDocument;
 import org.osmdroid.bonuspack.kml.KmlFeature;
 import org.osmdroid.bonuspack.kml.KmlLineString;
@@ -38,6 +49,9 @@ import org.osmdroid.bonuspack.kml.KmlPoint;
 import org.osmdroid.bonuspack.kml.KmlPolygon;
 import org.osmdroid.bonuspack.kml.KmlTrack;
 import org.osmdroid.config.Configuration;
+import org.osmdroid.events.MapListener;
+import org.osmdroid.events.ScrollEvent;
+import org.osmdroid.events.ZoomEvent;
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
 import org.osmdroid.util.BoundingBox;
 import org.osmdroid.util.GeoPoint;
@@ -47,6 +61,11 @@ import org.osmdroid.views.overlay.Marker;
 import org.osmdroid.views.overlay.Overlay;
 import org.osmdroid.views.overlay.Polygon;
 import org.osmdroid.views.overlay.Polyline;
+import org.osmdroid.views.overlay.ScaleBarOverlay;
+import org.osmdroid.views.overlay.compass.CompassOverlay;
+import org.osmdroid.views.overlay.gestures.RotationGestureOverlay;
+import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider;
+import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -60,12 +79,7 @@ import java.util.List;
 
 
 
-public class MainActivity extends AppCompatActivity {
-    MapView map = null;
-    Route route1 = new Route();
-    Route route2 = new Route();
-    //JSONArray routesArray = new JSONArray();
-    List<Integer> numbers = new ArrayList<>();
+public class MainActivity extends AppCompatActivity implements LocationListener {
 
     private static final int MENU_ROUTE1 = Menu.FIRST;
     private static final int MENU_ROUTE2 = Menu.FIRST + 1;
@@ -75,7 +89,27 @@ public class MainActivity extends AppCompatActivity {
     private static final int MENU_ABOUT = Menu.FIRST + 5;
     private static final int MENU_ERROR = Menu.FIRST + 6;
     private static final int MENU_REPORT = Menu.FIRST + 7;
+
+    private static final String PREFS_NAME = "org.georunner.prefs";
+    private static final String PREFS_LATITUDE_STRING = "latitudeString";
+    private static final String PREFS_LONGITUDE_STRING = "longitudeString";
+    private static final String PREFS_ORIENTATION = "orientation";
+    private static final String PREFS_ZOOM_LEVEL_DOUBLE = "zoomLevelDouble";
+
     Activity activity = MainActivity.this;
+    MapView map = null;
+    Route route1 = new Route();
+    Route route2 = new Route();
+    List<Integer> numbers = new ArrayList<>();
+    private SharedPreferences mPrefs;
+    protected ImageButton centerMap;
+    protected ImageButton followMap;
+    private Location currentLocation = null;
+    private MyLocationNewOverlay mLocationOverlay;
+    //private CompassOverlay mCompassOverlay;
+    private ScaleBarOverlay mScaleBarOverlay;
+    private RotationGestureOverlay mRotationGestureOverlay;
+    JSONArray routesArray;
 
 
     @Override
@@ -91,28 +125,107 @@ public class MainActivity extends AppCompatActivity {
         Toolbar myToolbar = findViewById(R.id.my_toolbar);
         setSupportActionBar(myToolbar);
         getSupportActionBar().setDisplayShowTitleEnabled(false);
-
+        mPrefs = getApplicationContext().getSharedPreferences(PREFS_NAME, getApplicationContext().MODE_PRIVATE);
         map = findViewById(R.id.map);
+
         map.setTileSource(TileSourceFactory.MAPNIK);
-        map.getController().setZoom(7d);
-        GeoPoint pl_center = new GeoPoint(52.18d, 19.35d);
-        map.getController().setCenter(pl_center);
+        map.setFlingEnabled(false);
+        map.setMultiTouchControls(true);
+        map.setTilesScaledToDpi(true);
 
-        //routesArray = checkRoutes();
 
-        for (int i = 0; i < 100; i++) {
-            numbers.add(i);
+//        myCompassOverlay mCompassOverlay = new myCompassOverlay(this, new InternalCompassOrientationProvider(this), map);
+//        mCompassOverlay.enableCompass();
+
+
+
+        mScaleBarOverlay = new ScaleBarOverlay(map);
+        mScaleBarOverlay.setScaleBarOffset(getResources().getDisplayMetrics().widthPixels / 2, 10);
+        mScaleBarOverlay.setCentred(true);
+        mScaleBarOverlay.setAlignBottom(true);
+
+        GpsMyLocationProvider gpsMyLocationProvider = new GpsMyLocationProvider(getApplicationContext());
+        mLocationOverlay = new MyLocationNewOverlay(gpsMyLocationProvider, map);
+        mLocationOverlay.setDrawAccuracyEnabled(true);
+        //mMyLocationOverlay.setEnableAutoStop(false);
+
+        mLocationOverlay.enableMyLocation();
+        mLocationOverlay.setOptionsMenuEnabled(true);
+
+        mRotationGestureOverlay = new RotationGestureOverlay(map);
+        mRotationGestureOverlay.setEnabled(true);
+
+
+        map.getOverlays().add(mRotationGestureOverlay);
+        map.getOverlays().add(mLocationOverlay);
+//        map.getOverlays().add(mCompassOverlay);
+        map.getOverlays().add(mScaleBarOverlay);
+
+
+        checkRoutes();
+
+
+
+
+
+        final float zoomLevel = mPrefs.getFloat(PREFS_ZOOM_LEVEL_DOUBLE, 7f);
+        map.getController().setZoom(zoomLevel);
+        final float orientation = mPrefs.getFloat(PREFS_ORIENTATION, 0);
+        map.setMapOrientation(orientation, false);
+        final String latitudeString = mPrefs.getString(PREFS_LATITUDE_STRING, "52.18d");
+        final String longitudeString = mPrefs.getString(PREFS_LONGITUDE_STRING, "19.35d");
+        final double latitude = Double.valueOf(latitudeString);
+        final double longitude = Double.valueOf(longitudeString);
+        map.setExpectedCenter(new GeoPoint(latitude, longitude));
+
+//        centerMap = findViewById(R.id.ic_center_map);
+//
+//        centerMap.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                Toast.makeText(getApplicationContext(), "asd", Toast.LENGTH_SHORT).show();
+//                if (currentLocation != null) {
+//                    Toast.makeText(getApplicationContext(), currentLocation.toString(), Toast.LENGTH_SHORT).show();
+//                    GeoPoint myPosition = new GeoPoint(currentLocation.getLatitude(), currentLocation.getLongitude());
+//                    map.getController().animateTo(myPosition);
+//                }
+//            }
+//        });
+
+        followMap = findViewById(R.id.ic_follow);
+
+        followMap.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                if (!mLocationOverlay.isFollowLocationEnabled()) {
+                    mLocationOverlay.enableFollowLocation();
+                    followMap.setImageResource(R.drawable.osm_ic_follow_me_on);
+                } else {
+                    mLocationOverlay.disableFollowLocation();
+                    followMap.setImageResource(R.drawable.osm_ic_follow_me);
+                }
+            }
+        });
+    }
+
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent event) {
+
+        if (!mLocationOverlay.isFollowLocationEnabled()) {
+
+            followMap.setImageResource(R.drawable.osm_ic_follow_me);
+
         }
 
-        Collections.shuffle(numbers);
-
-        getRoutes();
-
+        return super.dispatchTouchEvent(event);
+    }
 
 
 
-
-
+    @Override
+    public void onLocationChanged(Location location) {
+        currentLocation=location;
     }
 
     @Override
@@ -143,7 +256,6 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         KmlDocument kmlDocument = new KmlDocument();
         InputStream jsonStream;
-        InputStream kmlStream;
         String jsonString = null;
         FolderOverlay kmlOverlay;
         BoundingBox bb;
@@ -152,7 +264,14 @@ public class MainActivity extends AppCompatActivity {
         switch (item.getItemId()) {
             case MENU_ROUTE1:
 
-                map.getOverlays().clear();
+                for(int i=0; i<map.getOverlays().size(); i++) {
+                    String className = map.getOverlays().get(i).getClass().getName();
+                    if (className.equals("org.osmdroid.views.overlay.FolderOverlay")){
+                        map.getOverlays().remove(i);
+                        break;
+                    }
+                }
+
                 try {
                     jsonStream = route1.getValues();
                     int size = jsonStream.available();
@@ -180,7 +299,14 @@ public class MainActivity extends AppCompatActivity {
 
             case MENU_ROUTE2:
 
-                map.getOverlays().clear();
+                for(int i=0; i<map.getOverlays().size(); i++) {
+                    String className = map.getOverlays().get(i).getClass().getName();
+                    if (className.equals("org.osmdroid.views.overlay.FolderOverlay")){
+                        map.getOverlays().remove(i);
+                        break;
+                    }
+                }
+
                 try {
                     jsonStream = route2.getValues();
                     int size = jsonStream.available();
@@ -195,7 +321,7 @@ public class MainActivity extends AppCompatActivity {
 
                 kmlDocument.parseGeoJSON(jsonString);
                 kmlOverlay = (FolderOverlay) kmlDocument.mKmlRoot.buildOverlay(map, null, styler, kmlDocument);
-
+                kmlOverlay.setName("asd2");
                 map.getOverlays().add(kmlOverlay);
                 map.invalidate();
                 bb = kmlDocument.mKmlRoot.getBoundingBox();
@@ -207,12 +333,18 @@ public class MainActivity extends AppCompatActivity {
             case MENU_CHANGE:
 
                 getRoutes();
-
-
+                return true;
 
 
             case MENU_CLEAR:
-                map.getOverlays().clear();
+                for(int i=0; i<map.getOverlays().size(); i++) {
+                    String className = map.getOverlays().get(i).getClass().getName();
+                    if (className.equals("org.osmdroid.views.overlay.FolderOverlay")){
+                        map.getOverlays().remove(i);
+                        break;
+                    }
+                }
+
                 map.invalidate();
                 return true;
 
@@ -227,9 +359,15 @@ public class MainActivity extends AppCompatActivity {
                 return true;
 
             case MENU_ABOUT:
+
+                ImageView image = new ImageView(this);
+                image.setImageResource(R.drawable.eovalue);
+
                 new AlertDialog.Builder(activity)
+                        .setView(image)
                         .setTitle("About")
-                        .setMessage("Georunner")
+                        .setMessage("This application has been developed within the EOVALUE project, which has received funding from the European Union’s Horizon 2020 research and innovation programme. The JRC, or as the case may be the European Commission, shall not be held liable for any direct or indirect, incidental, consequential or other damages, including but not limited to the loss of data, loss of profits, or any other financial loss arising from the use of this application, or inability to use it, even if the JRC is notified of the possibility of such\n" +
+                                "damages.")
 
                         // Specifying a listener allows you to take an action before dismissing the dialog.
                         // The dialog is automatically dismissed when a dialog button is clicked.
@@ -241,7 +379,7 @@ public class MainActivity extends AppCompatActivity {
 
                         // A null listener allows the button to dismiss the dialog and take no further action.
                         //.setNegativeButton(android.R.string.no, null)
-                        //.setIcon(android.R.drawable.ic_dialog_alert)
+                        //.setIcon(R.drawable.eovalue)
                         .show();
 
                 return true;
@@ -265,6 +403,15 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onPause(){
+
+        //save the current location
+        final SharedPreferences.Editor edit = mPrefs.edit();
+        edit.putFloat(PREFS_ORIENTATION, map.getMapOrientation());
+        edit.putString(PREFS_LATITUDE_STRING, String.valueOf(map.getMapCenter().getLatitude()));
+        edit.putString(PREFS_LONGITUDE_STRING, String.valueOf(map.getMapCenter().getLongitude()));
+        edit.putFloat(PREFS_ZOOM_LEVEL_DOUBLE, (float) map.getZoomLevelDouble());
+        edit.apply();
+
         super.onPause();
         //this will refresh the osmdroid configuration on resuming.
         //if you make changes to the configuration, use
@@ -277,7 +424,7 @@ public class MainActivity extends AppCompatActivity {
 
         if (numbers.size()<2){
             numbers = new ArrayList<>();
-            for (int i = 0; i < 100; i++) {
+            for (int i = 0; i < routesArray.length(); i++) {
                 numbers.add(i);
             }
 
@@ -285,8 +432,8 @@ public class MainActivity extends AppCompatActivity {
 
         }
 
-        route1 = getRouteQuery("route "+numbers.get(0));
-        route2 = getRouteQuery("route "+numbers.get(1));
+        route1 = getRouteQuery("dict"+numbers.get(0));
+        route2 = getRouteQuery("dict"+numbers.get(1));
 
         numbers.remove(0);
         numbers.remove(0);
@@ -296,11 +443,11 @@ public class MainActivity extends AppCompatActivity {
 
     public class Route {
         public String name;
-        public String values;
-        public String ids;
-        public int count;
+        private String values;
+        private String ids;
+        private int count;
 
-        public Route() {
+        private Route() {
             name="";
         }
 
@@ -327,12 +474,11 @@ public class MainActivity extends AppCompatActivity {
             this.count = count;
         }
 
-        public InputStream getValues() {
-            InputStream inputStream = new ByteArrayInputStream(values.getBytes(Charset.forName("UTF-8")));
-            return inputStream;
+        private InputStream getValues() {
+            return new ByteArrayInputStream(values.getBytes(Charset.forName("UTF-8")));
         }
 
-        public void setValues(String values) {
+        private void setValues(String values) {
             this.values = values;
         }
 
@@ -340,7 +486,7 @@ public class MainActivity extends AppCompatActivity {
             return ids;
         }
 
-        public void setIds(String ids) {
+        private void setIds(String ids) {
             this.ids = ids;
 
 
@@ -348,84 +494,62 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-//    private JSONArray checkRoutes() {
-//
-//
-//
-//
-//        RequestQueue queue = Volley.newRequestQueue(this);
-//        String url ="http://vps510297.ovh.net:3123/api/routes/";
-//
-//
-//
-//        JsonObjectRequest getRouteRequest = new JsonObjectRequest(Request.Method.POST, url, null,
-//                new Response.Listener<JSONObject>() {
-//
-//                    @Override
-//                    public void onResponse(JSONObject response) {
-//
-//                        if (response.optString("success").equals("true")) {
-//
-//                            try{
-//
-//
-//                                routesArray = response.getJSONArray("route");
-//
-//
-//                            }catch (JSONException e){
-//                                Log.d("Error", e.toString());
-//                            }
-//                        }
-//                    }
-//                },
-//
-//                new Response.ErrorListener() {
-//                    @Override
-//                    public void onErrorResponse(VolleyError error) {
-//
-//                        if (error instanceof NoConnectionError) {
-//                            Toast.makeText(getApplicationContext(), getResources().getString(R.string.offline), Toast.LENGTH_SHORT).show();
-//                        } else if (error instanceof TimeoutError) {
-//                            Toast.makeText(getApplicationContext(), getResources().getString(R.string.server_offline), Toast.LENGTH_LONG).show();
-//                        } else if (error instanceof AuthFailureError) {
-//                            Toast.makeText(getApplicationContext(), "AuthFailureError"+error.toString(), Toast.LENGTH_SHORT).show();
-//                        } else if (error instanceof ServerError) {
-//                            NetworkResponse networkResponse = error.networkResponse;
-//                            if (networkResponse != null && networkResponse.data != null) {
-//                                String jsonError = new String(networkResponse.data);
-//
-//                                try {
-//                                    JSONObject errorResponse = new JSONObject(jsonError);
-//
-//                                    if (!errorResponse.optString("name").equals("")) {
-//                                        Toast.makeText(getApplicationContext(), getResources().getString(R.string.email_req), Toast.LENGTH_SHORT).show();
-//                                    } else {
-//                                        Toast.makeText(getApplicationContext(), errorResponse.toString(), Toast.LENGTH_SHORT).show();
-//                                    }
-//
-//
-//                                } catch (JSONException err) {
-//                                    Toast.makeText(getApplicationContext(), err.toString(), Toast.LENGTH_LONG).show();
-//                                }
-//                            }
-//                        } else if (error instanceof NetworkError) {
-//                            Toast.makeText(getApplicationContext(), "NetworkError"+error.toString(), Toast.LENGTH_SHORT).show();
-//                        } else if (error instanceof ParseError) {
-//                            Toast.makeText(getApplicationContext(), "ParseError"+error.toString(), Toast.LENGTH_SHORT).show();
-//                        }
-//                    }
-//
-//
-//
-//                }
-//        );
-//
-//        queue.add(getRouteRequest);
-//
-//    return routesArray;
-//
-//
-//    }
+    private void checkRoutes() {
+
+
+
+
+        RequestQueue queue = Volley.newRequestQueue(this);
+        String url ="http://vps510297.ovh.net:3123/api/routes/";
+
+
+
+        JsonObjectRequest getRouteRequest = new JsonObjectRequest(Request.Method.POST, url, null,
+                new Response.Listener<JSONObject>() {
+
+                    @Override
+                    public void onResponse(JSONObject response) {
+
+                        if (response.optString("success").equals("true")) {
+
+                            try{
+
+
+                                routesArray = response.getJSONArray("route");
+                                //Toast.makeText(getApplicationContext(), routesArray.toString(), Toast.LENGTH_SHORT).show();
+                                for (int i = 0; i < routesArray.length(); i++) {
+                                    numbers.add(i);
+                                }
+
+                                Collections.shuffle(numbers);
+
+                                getRoutes();
+
+
+
+                            }catch (JSONException e){
+                                Log.d("Error", e.toString());
+                            }
+                        }
+                    }
+                },
+
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+
+                        Toast.makeText(getApplicationContext(), error.toString(), Toast.LENGTH_SHORT).show();
+
+                    }
+
+
+
+                }
+        );
+
+        queue.add(getRouteRequest);
+
+    }
 
 
     private Route getRouteQuery(String name) {
@@ -494,6 +618,25 @@ public class MainActivity extends AppCompatActivity {
 
         return route;
 
+
+
+    }
+
+
+
+    @Override
+    public void onStatusChanged(String provider, int status, Bundle extras) {
+
+    }
+
+    @Override
+    public void onProviderEnabled(String provider) {
+
+    }
+
+    @Override
+    public void onProviderDisabled(String provider) {
+
     }
 
 
@@ -527,3 +670,4 @@ public class MainActivity extends AppCompatActivity {
 
     }
 }
+
