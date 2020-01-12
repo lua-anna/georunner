@@ -140,27 +140,15 @@ public class LoginScreen extends AppCompatActivity {
                     if (response.optString("success").equals("true")) {
                         Toast.makeText(getApplicationContext(), getResources().getString(R.string.logged_in), Toast.LENGTH_SHORT).show();
 
-
-
                         if (rememberPass.isChecked())
                         {
                             lPrefs.edit().putString(PREFS_MAIL, userMail.getText().toString()).apply();
                             lPrefs.edit().putString(PREFS_PASSWORD, userPass.getText().toString()).apply();
                             lPrefs.edit().putBoolean(PREFS_REMEMBER, rememberPass.isChecked()).apply();
-
                         } else
                         {
                             lPrefs.edit().clear().apply();
                         }
-
-
-
-
-
-
-
-
-
                         gotoMap();
                     }
                 }

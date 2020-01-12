@@ -23,7 +23,7 @@
     <string name="email_req">Wymagany poprawny adres e-mail</string>
     <string name="password_req">Wymagane hasło</string>
     <string name="email_pass_wrong">Twój adrese-mail i/lub hasło są nieprawidłowe</string>
-    <string name="notverified">Twój adres e-mail nie został potwierdzony</string>
+    <string name="notverified">Twoje konto nie zostało aktywowane</string>
     <string name="username_req">Wymagana nazwa użytkownika</string>
     <string name="reg_password_req">Hasło musi się składać z co najmniej 6 znaków</string>
     <string name="reg_password2_req">Hasła muszą się zgadzać</string>

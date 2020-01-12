@@ -72,7 +72,7 @@ public class SignupActivity extends AppCompatActivity {
             JsonObjectRequest registerRequest = new JsonObjectRequest(Request.Method.POST, url, jsonBody, new Response.Listener<JSONObject>() {
                 @Override
                 public void onResponse(JSONObject response) {
-                    Toast.makeText(getApplicationContext(), response.toString(), Toast.LENGTH_SHORT).show();
+                    //Toast.makeText(getApplicationContext(), response.toString(), Toast.LENGTH_SHORT).show();
                     if (!response.optString("_id").equals("")) {
                         Toast.makeText(getApplicationContext(), getResources().getString(R.string.signed_up), Toast.LENGTH_SHORT).show();
                         finish();
@@ -101,7 +101,7 @@ public class SignupActivity extends AppCompatActivity {
                                         if (!errorResponse.optString("name").equals("")) {
                                             Toast.makeText(getApplicationContext(), getResources().getString(R.string.username_req), Toast.LENGTH_SHORT).show();
                                         } else if (!errorResponse.optString("email").equals("")) {
-                                            Toast.makeText(getApplicationContext(), getResources().getString(R.string.email_req), Toast.LENGTH_SHORT).show();
+                                            Toast.makeText(getApplicationContext(), errorResponse.optString("email"), Toast.LENGTH_SHORT).show();
                                         } else if (!errorResponse.optString("password").equals("")) {
                                             Toast.makeText(getApplicationContext(), getResources().getString(R.string.reg_password_req), Toast.LENGTH_SHORT).show();
                                         } else if (!errorResponse.optString("password2").equals("")) {

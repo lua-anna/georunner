@@ -15,7 +15,7 @@
     <string name="password">Password</string>
     <string name="wrong_password">Wrong password, try again</string>
     <string name="logged_in">Login successful</string>
-    <string name="signed_up">Signup successful</string>
+    <string name="signed_up">Signup successful. Verification e-mail has been sent.</string>
     <string name="registration">Registration</string>
     <string name="password_repeat">Repeat password</string>
     <string name="offline">No internet connection</string>
@@ -23,8 +23,8 @@
     <string name="email_req">E-mail address required</string>
     <string name="password_req">Password required</string>
     <string name="email_pass_wrong">Your e-mail address and/or password are incorrect</string>
-    <string name="notverified">Your e-mail address is not verified</string>
-    <string name="username_req">Usernme required</string>
+    <string name="notverified">Your account is not verified</string>
+    <string name="username_req">Username required</string>
     <string name="reg_password_req">Password must be at least 6 characters long</string>
     <string name="reg_password2_req">Passwords must match</string>
     <string name="email_exists">This e-mail address is already in use</string>
