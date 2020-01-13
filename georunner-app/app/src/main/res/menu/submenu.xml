@@ -1,0 +1,21 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/submenu_find"
+
+        android:title="@string/find_similar"
+        app:showAsAction="never"/>
+
+    <item android:id="@+id/submenu_rate"
+        android:title="@string/rate"
+        app:showAsAction="never"/>
+
+    <item android:id="@+id/submenu_report"
+        android:title="@string/report"
+        app:showAsAction="never"/>
+
+
+
+</menu>
+

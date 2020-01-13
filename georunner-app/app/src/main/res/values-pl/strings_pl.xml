@@ -9,7 +9,7 @@
     <string name="signup_btn">Zarejestruj się</string>
     <string name="logout">Wyloguj</string>
     <string name="title">Georunner</string>
-    <string name="version">0.1</string>
+    <string name="version">0.2</string>
     <string name="username">Użytkownik</string>
     <string name="mail">Adres e-mail</string>
     <string name="password">Hasło</string>
@@ -32,5 +32,8 @@
     <string name="center_map_description">Wyśrodkuj mapę na Twojej lokalizacji</string>
     <string name="follow_description">Podążaj za aktualną lokalizacją</string>
     <string name="logo">Georunner</string>
+    <string name="find_similar">Znajdź podobne trasy</string>
+    <string name="rate">Oceń trasę</string>
+    <string name="report">Zgłoś uszkodzoną trasę</string>
 
 </resources>

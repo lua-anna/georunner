@@ -5,12 +5,11 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.graphics.Color;
-import android.location.Location;
-import android.location.LocationListener;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
@@ -19,6 +18,7 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.view.ActionMode;
 import androidx.appcompat.widget.Toolbar;
 
 import com.android.volley.AuthFailureError;
@@ -39,7 +39,6 @@ import com.android.volley.toolbox.Volley;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.osmdroid.api.IMapView;
 import org.osmdroid.bonuspack.BuildConfig;
 import org.osmdroid.bonuspack.kml.KmlDocument;
 import org.osmdroid.bonuspack.kml.KmlFeature;
@@ -49,9 +48,6 @@ import org.osmdroid.bonuspack.kml.KmlPoint;
 import org.osmdroid.bonuspack.kml.KmlPolygon;
 import org.osmdroid.bonuspack.kml.KmlTrack;
 import org.osmdroid.config.Configuration;
-import org.osmdroid.events.MapListener;
-import org.osmdroid.events.ScrollEvent;
-import org.osmdroid.events.ZoomEvent;
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
 import org.osmdroid.util.BoundingBox;
 import org.osmdroid.util.GeoPoint;
@@ -79,16 +75,7 @@ import java.util.List;
 
 
 
-public class MainActivity extends AppCompatActivity implements LocationListener {
-
-    private static final int MENU_ROUTE1 = Menu.FIRST;
-    private static final int MENU_ROUTE2 = Menu.FIRST + 1;
-    private static final int MENU_CHANGE = Menu.FIRST + 2;
-    private static final int MENU_LOGOUT = Menu.FIRST + 3;
-    private static final int MENU_CLEAR = Menu.FIRST + 4;
-    private static final int MENU_ABOUT = Menu.FIRST + 5;
-    private static final int MENU_ERROR = Menu.FIRST + 6;
-    private static final int MENU_REPORT = Menu.FIRST + 7;
+public class MainActivity extends AppCompatActivity {
 
     private static final String PREFS_NAME = "org.georunner.prefs";
     private static final String PREFS_LATITUDE_STRING = "latitudeString";
@@ -96,21 +83,24 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     private static final String PREFS_ORIENTATION = "orientation";
     private static final String PREFS_ZOOM_LEVEL_DOUBLE = "zoomLevelDouble";
 
+    private String menu_route = "";
+
     Activity activity = MainActivity.this;
     MapView map = null;
     Route route1 = new Route();
     Route route2 = new Route();
     List<Integer> numbers = new ArrayList<>();
     private SharedPreferences mPrefs;
-    protected ImageButton centerMap;
+    //protected ImageButton centerMap;
     protected ImageButton followMap;
-    private Location currentLocation = null;
+    //private Location currentLocation = null;
     private MyLocationNewOverlay mLocationOverlay;
     //private CompassOverlay mCompassOverlay;
     private ScaleBarOverlay mScaleBarOverlay;
     private RotationGestureOverlay mRotationGestureOverlay;
     JSONArray routesArray;
 
+    private ActionMode mActionMode;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -122,9 +112,9 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
         setContentView(R.layout.activity_main);
 
-        Toolbar myToolbar = findViewById(R.id.my_toolbar);
-        setSupportActionBar(myToolbar);
-        getSupportActionBar().setDisplayShowTitleEnabled(false);
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        //getSupportActionBar().setDisplayShowTitleEnabled(false);
         mPrefs = getApplicationContext().getSharedPreferences(PREFS_NAME, getApplicationContext().MODE_PRIVATE);
         map = findViewById(R.id.map);
 
@@ -223,32 +213,35 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
 
 
-    @Override
-    public void onLocationChanged(Location location) {
-        currentLocation=location;
-    }
+
 
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
         menu.clear();
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu, menu);
 
-        if (route1.getName() != "") {
-            menu.add(0, MENU_ROUTE1, Menu.NONE, route1.getName());
+        MenuItem item = menu.findItem(R.id.menu_route1);
+
+        if (!route1.getName().equals("")) {
+            item.setTitle(route1.getName());
         } else {
-            menu.add(0, MENU_ERROR, Menu.NONE, "Route download error");
+            item.setTitle("Route download error");
         }
 
-        if (route2.getName() != "") {
-            menu.add(0, MENU_ROUTE2, Menu.NONE, route2.getName());
+        MenuItem item2 = menu.findItem(R.id.menu_route2);
+
+        if (!route2.getName().equals("")) {
+            item2.setTitle(route2.getName());
         } else {
-            menu.add(0, MENU_ERROR, Menu.NONE, "Route download error");
+            item2.setTitle("Route download error");
         }
-        menu.add(0, MENU_CHANGE, Menu.NONE, R.string.changeRoute);
-        menu.add(0, MENU_CLEAR, Menu.NONE, R.string.clear);
-        menu.add(0, MENU_LOGOUT, Menu.NONE, R.string.logout);
-        menu.add(0, MENU_ABOUT, Menu.NONE, R.string.about);
+
+
+
         return super.onPrepareOptionsMenu(menu);
     }
+
 
 
 
@@ -262,7 +255,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         KmlFeature.Styler styler = new MyKmlStyler();
 
         switch (item.getItemId()) {
-            case MENU_ROUTE1:
+            case R.id.menu_route1:
 
                 for(int i=0; i<map.getOverlays().size(); i++) {
                     String className = map.getOverlays().get(i).getClass().getName();
@@ -292,12 +285,23 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 bb = kmlDocument.mKmlRoot.getBoundingBox();
                 bb.increaseByScale(1.5f);
                 map.zoomToBoundingBox(bb, true);
+
+                if (mActionMode != null) {
+                    return false;
+                }
+                menu_route = route1.getName();
+                mActionMode = startSupportActionMode(mActionModeCallback);
+
+
+
+
+
                 return true;
 
 
 
 
-            case MENU_ROUTE2:
+            case R.id.menu_route2:
 
                 for(int i=0; i<map.getOverlays().size(); i++) {
                     String className = map.getOverlays().get(i).getClass().getName();
@@ -327,16 +331,23 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 bb = kmlDocument.mKmlRoot.getBoundingBox();
                 bb.increaseByScale(1.5f);
                 map.zoomToBoundingBox(bb, true);
+
+                if (mActionMode != null) {
+                    return false;
+                }
+                menu_route = route2.getName();
+                mActionMode = startSupportActionMode(mActionModeCallback);
+
                 return true;
 
 
-            case MENU_CHANGE:
+            case R.id.menu_change:
 
                 getRoutes();
                 return true;
 
 
-            case MENU_CLEAR:
+            case R.id.menu_clear:
                 for(int i=0; i<map.getOverlays().size(); i++) {
                     String className = map.getOverlays().get(i).getClass().getName();
                     if (className.equals("org.osmdroid.views.overlay.FolderOverlay")){
@@ -348,17 +359,13 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 map.invalidate();
                 return true;
 
-            case MENU_LOGOUT:
+            case R.id.menu_logout:
                 finish();
 
                 return true;
 
-            case MENU_ERROR:
-                getRoutes();
 
-                return true;
-
-            case MENU_ABOUT:
+            case R.id.menu_about:
 
                 ImageView image = new ImageView(this);
                 image.setImageResource(R.drawable.eovalue);
@@ -373,10 +380,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                         // The dialog is automatically dismissed when a dialog button is clicked.
                         .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int which) {
-                                // Continue with delete operation
                             }
                         })
-
                         // A null listener allows the button to dismiss the dialog and take no further action.
                         //.setNegativeButton(android.R.string.no, null)
                         //.setIcon(R.drawable.eovalue)
@@ -391,6 +396,50 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
         }
     }
+
+    private ActionMode.Callback mActionModeCallback = new ActionMode.Callback() {
+        @Override
+        public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+            mode.getMenuInflater().inflate(R.menu.submenu, menu);
+            mode.setTitle(menu_route);
+
+            return true;
+        }
+
+        @Override
+        public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+            return false;
+        }
+
+        @Override
+        public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+            switch (item.getItemId()){
+                case R.id.submenu_find:
+                    Toast.makeText(activity,"submenu_find", Toast.LENGTH_SHORT).show();
+
+                    return true;
+                case R.id.submenu_rate:
+                    Toast.makeText(activity,"submenu_rate", Toast.LENGTH_SHORT).show();
+
+                    return true;
+                case R.id.submenu_report:
+                    Toast.makeText(activity,"submenu_report", Toast.LENGTH_SHORT).show();
+
+                    return true;
+                default:
+                    return false;
+
+            }
+
+        }
+
+        @Override
+        public void onDestroyActionMode(ActionMode mode) {
+            mActionMode = null;
+            menu_route = "";
+
+        }
+    };
 
     public void onResume(){
         super.onResume();
@@ -435,6 +484,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         route1 = getRouteQuery("dict"+numbers.get(0));
         route2 = getRouteQuery("dict"+numbers.get(1));
 
+
+
         numbers.remove(0);
         numbers.remove(0);
 
@@ -463,7 +514,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         }
 
         public void setName(String name) {
-            this.name = name;
+            this.name = name.replace("dict","Route ");
         }
 
         public int getCount() {
@@ -621,25 +672,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
 
     }
-
-
-
-    @Override
-    public void onStatusChanged(String provider, int status, Bundle extras) {
-
-    }
-
-    @Override
-    public void onProviderEnabled(String provider) {
-
-    }
-
-    @Override
-    public void onProviderDisabled(String provider) {
-
-    }
-
-
 
 
 
