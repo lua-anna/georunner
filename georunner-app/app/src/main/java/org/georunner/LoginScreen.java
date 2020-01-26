@@ -5,13 +5,12 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import android.Manifest;
-import android.app.AlertDialog;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -120,9 +119,6 @@ public class LoginScreen extends AppCompatActivity {
     }
 
     private void loginQuery() {
-
-
-
         try {
             RequestQueue queue = Volley.newRequestQueue(this);
             String url ="http://vps510297.ovh.net:3123/api/users/login";
@@ -132,13 +128,14 @@ public class LoginScreen extends AppCompatActivity {
             jsonBody.put("email", userMail.getText());
             jsonBody.put("password", userPass.getText());
 
-
             JsonObjectRequest loginRequest = new JsonObjectRequest(Request.Method.POST, url, jsonBody, new Response.Listener<JSONObject>() {
                 @Override
                 public void onResponse(JSONObject response) {
-
                     if (response.optString("success").equals("true")) {
-                        Toast.makeText(getApplicationContext(), getResources().getString(R.string.logged_in), Toast.LENGTH_SHORT).show();
+
+                        Toast toast = Toast.makeText(getApplicationContext(), getResources().getString(R.string.logged_in), Toast.LENGTH_SHORT);
+                        toast.setGravity(Gravity.BOTTOM,0,200);
+                        toast.show();
 
                         if (rememberPass.isChecked())
                         {
@@ -153,7 +150,6 @@ public class LoginScreen extends AppCompatActivity {
                     }
                 }
             },
-
             new Response.ErrorListener() {
                 @Override
                 public void onErrorResponse(VolleyError error) {
@@ -178,8 +174,8 @@ public class LoginScreen extends AppCompatActivity {
                                     Toast.makeText(getApplicationContext(), getResources().getString(R.string.password_req), Toast.LENGTH_SHORT).show();
                                 } else if (!errorResponse.optString("emailnotfound").equals("") || !errorResponse.optString("passwordincorrect").equals("")){
                                     Toast.makeText(getApplicationContext(), getResources().getString(R.string.email_pass_wrong), Toast.LENGTH_SHORT).show();
-                                } else if (!errorResponse.optString("notverified").equals("")){
-                                    Toast.makeText(getApplicationContext(), getResources().getString(R.string.notverified), Toast.LENGTH_SHORT).show();
+                                } else if (!errorResponse.optString("not_verified").equals("")){
+                                    Toast.makeText(getApplicationContext(), getResources().getString(R.string.not_verified), Toast.LENGTH_SHORT).show();
                                 } else {
                                     Toast.makeText(getApplicationContext(), errorResponse.toString(), Toast.LENGTH_SHORT).show();
                                 }

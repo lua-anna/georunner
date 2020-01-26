@@ -3,13 +3,13 @@
     <string name="route1">Trasa 1</string>
     <string name="route2">Trasa 2</string>
     <string name="route3">Trasa 3</string>
-    <string name="changeRoute">Zmień trasy</string>
+    <string name="change_route">Zmień trasy</string>
     <string name="clear">Wyczyść</string>
     <string name="login_btn">Zaloguj</string>
     <string name="signup_btn">Zarejestruj się</string>
     <string name="logout">Wyloguj</string>
     <string name="title">Georunner</string>
-    <string name="version">0.2</string>
+    <string name="version">0.3</string>
     <string name="username">Użytkownik</string>
     <string name="mail">Adres e-mail</string>
     <string name="password">Hasło</string>
@@ -23,7 +23,7 @@
     <string name="email_req">Wymagany poprawny adres e-mail</string>
     <string name="password_req">Wymagane hasło</string>
     <string name="email_pass_wrong">Twój adrese-mail i/lub hasło są nieprawidłowe</string>
-    <string name="notverified">Twoje konto nie zostało aktywowane</string>
+    <string name="not_verified">Twoje konto nie zostało aktywowane</string>
     <string name="username_req">Wymagana nazwa użytkownika</string>
     <string name="reg_password_req">Hasło musi się składać z co najmniej 6 znaków</string>
     <string name="reg_password2_req">Hasła muszą się zgadzać</string>
@@ -35,5 +35,8 @@
     <string name="find_similar">Znajdź podobne trasy</string>
     <string name="rate">Oceń trasę</string>
     <string name="report">Zgłoś uszkodzoną trasę</string>
+    <string name="accept">Zaakceptuj trasę</string>
+    <string name="cancel">Anuluj</string>
+    <string name="choose_route">Wybierz jedną z proponowanych tras</string>
 
 </resources>

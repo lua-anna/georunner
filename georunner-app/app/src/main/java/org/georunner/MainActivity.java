@@ -8,8 +8,9 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.Menu;
-import android.view.MenuInflater;
+
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
@@ -17,8 +18,10 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.view.ActionMode;
+import androidx.appcompat.widget.ActionMenuView;
 import androidx.appcompat.widget.Toolbar;
 
 import com.android.volley.AuthFailureError;
@@ -34,6 +37,7 @@ import com.android.volley.TimeoutError;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 
 import org.json.JSONArray;
@@ -58,7 +62,6 @@ import org.osmdroid.views.overlay.Overlay;
 import org.osmdroid.views.overlay.Polygon;
 import org.osmdroid.views.overlay.Polyline;
 import org.osmdroid.views.overlay.ScaleBarOverlay;
-import org.osmdroid.views.overlay.compass.CompassOverlay;
 import org.osmdroid.views.overlay.gestures.RotationGestureOverlay;
 import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider;
 import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay;
@@ -71,6 +74,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
+
 import java.util.List;
 
 
@@ -83,87 +87,88 @@ public class MainActivity extends AppCompatActivity {
     private static final String PREFS_ORIENTATION = "orientation";
     private static final String PREFS_ZOOM_LEVEL_DOUBLE = "zoomLevelDouble";
 
-    private String menu_route = "";
+    private SharedPreferences prefs;
+    private Activity activity = MainActivity.this;
+    private MapView map = null;
 
-    Activity activity = MainActivity.this;
-    MapView map = null;
-    Route route1 = new Route();
-    Route route2 = new Route();
-    List<Integer> numbers = new ArrayList<>();
-    private SharedPreferences mPrefs;
-    //protected ImageButton centerMap;
-    protected ImageButton followMap;
+    private Toolbar toolbar;
+    private Toolbar toolbarBot;
+    private Menu botMenu;
+    private ActionMode actionMode;
+    //private ImageButton centerMap;
+    private ImageButton followMap;
     //private Location currentLocation = null;
-    private MyLocationNewOverlay mLocationOverlay;
-    //private CompassOverlay mCompassOverlay;
-    private ScaleBarOverlay mScaleBarOverlay;
-    private RotationGestureOverlay mRotationGestureOverlay;
-    JSONArray routesArray;
+    private MyLocationNewOverlay locationOverlay;
 
-    private ActionMode mActionMode;
+    private Route menuRoute = new Route();
+    private Route menuSimilRoute = new Route();
+    private Route route1 = new Route();
+    private Route route2 = new Route();
+    private Route routeSimil1 = new Route();
+    private Route routeSimil2 = new Route();
+
+    private List<Integer> allRoutesCount = new ArrayList<>();
+    private List<Integer> similRoutesCount = new ArrayList<>();
+
+    private JSONArray routesArray;
+    private JSONArray routesSimilarArray;
+
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-
-        Configuration.getInstance().load(getApplicationContext(), PreferenceManager.getDefaultSharedPreferences(getApplicationContext()));
+        //noinspection deprecation
+        Configuration.getInstance().load(activity, PreferenceManager.getDefaultSharedPreferences(activity));
         Configuration.getInstance().setUserAgentValue(BuildConfig.APPLICATION_ID);
-
         setContentView(R.layout.activity_main);
 
-        Toolbar toolbar = findViewById(R.id.toolbar);
+        toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        //getSupportActionBar().setDisplayShowTitleEnabled(false);
-        mPrefs = getApplicationContext().getSharedPreferences(PREFS_NAME, getApplicationContext().MODE_PRIVATE);
+        toolbarBot = findViewById(R.id.toolbarBot);
+
+        botMenu = toolbarBot.getMenu();
+        //toolbarBot.setVisibility(View.GONE);
+        toolbarBot.setOnMenuItemClickListener(botOnClickListener);
+
+
+        prefs = activity.getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         map = findViewById(R.id.map);
 
         map.setTileSource(TileSourceFactory.MAPNIK);
         map.setFlingEnabled(false);
         map.setMultiTouchControls(true);
         map.setTilesScaledToDpi(true);
-
-
 //        myCompassOverlay mCompassOverlay = new myCompassOverlay(this, new InternalCompassOrientationProvider(this), map);
 //        mCompassOverlay.enableCompass();
-
-
-
-        mScaleBarOverlay = new ScaleBarOverlay(map);
-        mScaleBarOverlay.setScaleBarOffset(getResources().getDisplayMetrics().widthPixels / 2, 10);
-        mScaleBarOverlay.setCentred(true);
-        mScaleBarOverlay.setAlignBottom(true);
-
-        GpsMyLocationProvider gpsMyLocationProvider = new GpsMyLocationProvider(getApplicationContext());
-        mLocationOverlay = new MyLocationNewOverlay(gpsMyLocationProvider, map);
-        mLocationOverlay.setDrawAccuracyEnabled(true);
+        //private CompassOverlay mCompassOverlay;
+        ScaleBarOverlay scaleBarOverlay = new ScaleBarOverlay(map);
+        scaleBarOverlay.setScaleBarOffset(getResources().getDisplayMetrics().widthPixels / 2, 10);
+        scaleBarOverlay.setCentred(true);
+        scaleBarOverlay.setAlignBottom(true);
+        GpsMyLocationProvider gpsMyLocationProvider = new GpsMyLocationProvider(activity);
+        locationOverlay = new MyLocationNewOverlay(gpsMyLocationProvider, map);
+        locationOverlay.setDrawAccuracyEnabled(true);
         //mMyLocationOverlay.setEnableAutoStop(false);
+        locationOverlay.enableMyLocation();
+        locationOverlay.setOptionsMenuEnabled(true);
+        RotationGestureOverlay rotationGestureOverlay = new RotationGestureOverlay(map);
+        rotationGestureOverlay.setEnabled(true);
 
-        mLocationOverlay.enableMyLocation();
-        mLocationOverlay.setOptionsMenuEnabled(true);
-
-        mRotationGestureOverlay = new RotationGestureOverlay(map);
-        mRotationGestureOverlay.setEnabled(true);
-
-
-        map.getOverlays().add(mRotationGestureOverlay);
-        map.getOverlays().add(mLocationOverlay);
+        map.getOverlays().add(rotationGestureOverlay);
+        map.getOverlays().add(locationOverlay);
 //        map.getOverlays().add(mCompassOverlay);
-        map.getOverlays().add(mScaleBarOverlay);
+        map.getOverlays().add(scaleBarOverlay);
 
 
         checkRoutes();
 
 
-
-
-
-        final float zoomLevel = mPrefs.getFloat(PREFS_ZOOM_LEVEL_DOUBLE, 7f);
+        final float zoomLevel = prefs.getFloat(PREFS_ZOOM_LEVEL_DOUBLE, 12f);
         map.getController().setZoom(zoomLevel);
-        final float orientation = mPrefs.getFloat(PREFS_ORIENTATION, 0);
+        final float orientation = prefs.getFloat(PREFS_ORIENTATION, 0);
         map.setMapOrientation(orientation, false);
-        final String latitudeString = mPrefs.getString(PREFS_LATITUDE_STRING, "52.18d");
-        final String longitudeString = mPrefs.getString(PREFS_LONGITUDE_STRING, "19.35d");
+        final String latitudeString = prefs.getString(PREFS_LATITUDE_STRING, "50.65d");
+        final String longitudeString = prefs.getString(PREFS_LONGITUDE_STRING, "17.91d");
         final double latitude = Double.valueOf(latitudeString);
         final double longitude = Double.valueOf(longitudeString);
         map.setExpectedCenter(new GeoPoint(latitude, longitude));
@@ -173,9 +178,9 @@ public class MainActivity extends AppCompatActivity {
 //        centerMap.setOnClickListener(new View.OnClickListener() {
 //            @Override
 //            public void onClick(View v) {
-//                Toast.makeText(getApplicationContext(), "asd", Toast.LENGTH_SHORT).show();
+//                Toast.makeText(activity, "asd", Toast.LENGTH_SHORT).show();
 //                if (currentLocation != null) {
-//                    Toast.makeText(getApplicationContext(), currentLocation.toString(), Toast.LENGTH_SHORT).show();
+//                    Toast.makeText(activity, currentLocation.toString(), Toast.LENGTH_SHORT).show();
 //                    GeoPoint myPosition = new GeoPoint(currentLocation.getLatitude(), currentLocation.getLongitude());
 //                    map.getController().animateTo(myPosition);
 //                }
@@ -183,16 +188,15 @@ public class MainActivity extends AppCompatActivity {
 //        });
 
         followMap = findViewById(R.id.ic_follow);
-
         followMap.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
-                if (!mLocationOverlay.isFollowLocationEnabled()) {
-                    mLocationOverlay.enableFollowLocation();
+                if (!locationOverlay.isFollowLocationEnabled()) {
+                    locationOverlay.enableFollowLocation();
                     followMap.setImageResource(R.drawable.osm_ic_follow_me_on);
                 } else {
-                    mLocationOverlay.disableFollowLocation();
+                    locationOverlay.disableFollowLocation();
                     followMap.setImageResource(R.drawable.osm_ic_follow_me);
                 }
             }
@@ -201,175 +205,232 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent event) {
-
-        if (!mLocationOverlay.isFollowLocationEnabled()) {
-
+        if (!locationOverlay.isFollowLocationEnabled()) {
             followMap.setImageResource(R.drawable.osm_ic_follow_me);
-
         }
-
         return super.dispatchTouchEvent(event);
     }
-
-
-
 
 
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
         menu.clear();
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.menu, menu);
+        botMenu.clear();
+        toolbar.inflateMenu(R.menu.menu);
 
-        MenuItem item = menu.findItem(R.id.menu_route1);
+        if (actionMode == null) {
+            toolbarBot.setBackgroundColor(getColor(R.color.colorPrimaryDark));
 
-        if (!route1.getName().equals("")) {
-            item.setTitle(route1.getName());
+            getMenuInflater().inflate(R.menu.bot_menu, botMenu);
+
+            MenuItem item = botMenu.findItem(R.id.menu_route1);
+            if (!route1.getName().equals("")) {
+                item.setTitle(route1.getName());
+            } else {
+                item.setTitle("loading");
+            }
+
+            MenuItem item2 = botMenu.findItem(R.id.menu_route2);
+            if (!route2.getName().equals("")) {
+                item2.setTitle(route2.getName());
+            } else {
+                item2.setTitle("loading");
+            }
         } else {
-            item.setTitle("Route download error");
+            toolbarBot.setBackgroundColor(Color.parseColor("#0272a8"));
+            getMenuInflater().inflate(R.menu.bot_menu_similar, botMenu);
+
+            MenuItem item = botMenu.findItem(R.id.bot_menu_route1);
+            if (!routeSimil1.getName().equals("")) {
+                item.setTitle(routeSimil1.getName());
+            } else {
+                item.setTitle("loading");
+            }
+
+            MenuItem item2 = botMenu.findItem(R.id.bot_menu_route2);
+            if (!routeSimil2.getName().equals("")) {
+                item2.setTitle(routeSimil2.getName());
+            } else {
+                item2.setTitle("loading");
+            }
         }
-
-        MenuItem item2 = menu.findItem(R.id.menu_route2);
-
-        if (!route2.getName().equals("")) {
-            item2.setTitle(route2.getName());
-        } else {
-            item2.setTitle("Route download error");
-        }
-
-
-
         return super.onPrepareOptionsMenu(menu);
     }
 
 
+    public Toolbar.OnMenuItemClickListener botOnClickListener = new Toolbar.OnMenuItemClickListener() {
+
+        BoundingBox bb;
+
+        @Override
+        public boolean onMenuItemClick (MenuItem item) {
+            switch (item.getItemId()) {
 
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
+                case R.id.menu_route1:
+                    clearOverlays("");
+                    bb = drawRoute("baseRoute", route1, Color.RED);
+                    menuRoute = route1;
+
+                    return true;
+
+                case R.id.menu_route2:
+                    clearOverlays("");
+                    bb = drawRoute("baseRoute", route2, Color.RED);
+                    menuRoute = route2;
+
+                    return true;
+
+                case R.id.menu_accept:
+                    if (!menuRoute.getName().equals("")) {
+                        if (actionMode != null) {
+                            return false;
+                        }
+                        actionMode = startSupportActionMode(mActionModeCallback);
+                    } else {
+                        Toast toast = Toast.makeText(getApplicationContext(), getResources().getString(R.string.choose_route), Toast.LENGTH_SHORT);
+                        toast.setGravity(Gravity.BOTTOM,0,200);
+                        toast.show();
+                    }
+
+                    return true;
+
+                case R.id.menu_change:
+                    clearOverlays("");
+                    getRoutes(routesArray);
+                    menuRoute = new Route();
+                    return true;
+
+                case R.id.bot_menu_rate:
+                    Toast toast = Toast.makeText(activity, "submenu_rate: "+menuRoute.getName(), Toast.LENGTH_SHORT);
+                    toast.setGravity(Gravity.BOTTOM,0,200);
+                    toast.show();
+                    return true;
+
+                case R.id.bot_menu_find:
+                    getSimilarRoutes(menuRoute.getName());
+                    invalidateOptionsMenu();
+                    menuSimilRoute = new Route();
+                    return true;
+
+                case R.id.bot_menu_route1:
+                    clearOverlays("baseRoute");
+                    drawRoute("similarRoute", routeSimil1, Color.BLUE);
+                    menuSimilRoute = routeSimil1;
+
+                    return true;
+
+                case R.id.bot_menu_route2:
+                    clearOverlays("baseRoute");
+                    drawRoute("similarRoute", routeSimil2, Color.BLUE);
+                    menuSimilRoute = routeSimil2;
+
+                    return true;
+
+                case R.id.bot_menu_change:
+                    clearOverlays("baseRoute");
+                    getRoutes(routesSimilarArray);
+                    menuSimilRoute = new Route();
+                    invalidateOptionsMenu();
+
+                    return true;
+
+                case R.id.bot_menu_accept:
+                    if (!menuSimilRoute.getName().equals("")) {
+                        clearOverlays("");
+                        bb = drawRoute("baseRoute", menuSimilRoute, Color.RED);
+                        menuRoute = menuSimilRoute;
+                        actionMode.invalidate();
+                    } else {
+                        Toast toast2 = Toast.makeText(getApplicationContext(), getResources().getString(R.string.choose_route), Toast.LENGTH_SHORT);
+                        toast2.setGravity(Gravity.BOTTOM,0,200);
+                        toast2.show();
+                    }
+
+                    return true;
+
+                case R.id.bot_menu_cancel:
+                    clearOverlays("baseRoute");
+                    actionMode.invalidate();
+                    map.zoomToBoundingBox(bb, true);
+                    return true;
+
+                default:
+                    return false;
+            }
+        }
+
+
+
+    };
+
+
+    private BoundingBox drawRoute (String routeName, Route route, int color){
         KmlDocument kmlDocument = new KmlDocument();
         InputStream jsonStream;
         String jsonString = null;
         FolderOverlay kmlOverlay;
         BoundingBox bb;
-        KmlFeature.Styler styler = new MyKmlStyler();
+        BoundingBox bbInc;
+        KmlFeature.Styler styler = new MyKmlStyler(color);
 
+        try {
+            jsonStream = route.getValues();
+            int size = jsonStream.available();
+            byte[] buffer = new byte[size];
+            //noinspection ResultOfMethodCallIgnored
+            jsonStream.read(buffer);
+            jsonStream.close();
+            jsonString = new String(buffer, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            Log.d("Error", e.toString());
+        }
+
+        kmlDocument.parseGeoJSON(jsonString);
+        kmlOverlay = (FolderOverlay) kmlDocument.mKmlRoot.buildOverlay(map, null, styler, kmlDocument);
+        kmlOverlay.setName(routeName);
+        map.getOverlays().add(kmlOverlay);
+        map.invalidate();
+        bb = kmlDocument.mKmlRoot.getBoundingBox();
+        bbInc = bb.increaseByScale(1.3f);
+        map.zoomToBoundingBox(bbInc, true);
+
+        return bbInc;
+    }
+
+
+    private void clearOverlays(String routeName){
+        Overlay routeOverlay;
+
+        for(int i=0; i<map.getOverlays().size(); i++) {
+            routeOverlay = map.getOverlays().get(i);
+
+            if (routeOverlay instanceof FolderOverlay) {
+                if (routeName.equals("") || (!((FolderOverlay) routeOverlay).getName().equals(routeName))) {
+                    map.getOverlays().remove(i);
+                    i = i - 1;
+                }
+            }
+        }
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.menu_route1:
-
-                for(int i=0; i<map.getOverlays().size(); i++) {
-                    String className = map.getOverlays().get(i).getClass().getName();
-                    if (className.equals("org.osmdroid.views.overlay.FolderOverlay")){
-                        map.getOverlays().remove(i);
-                        break;
-                    }
-                }
-
-                try {
-                    jsonStream = route1.getValues();
-                    int size = jsonStream.available();
-                    byte[] buffer = new byte[size];
-                    jsonStream.read(buffer);
-                    jsonStream.close();
-                    jsonString = new String(buffer, StandardCharsets.UTF_8);
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-
-                }
-
-                kmlDocument.parseGeoJSON(jsonString);
-                kmlOverlay = (FolderOverlay) kmlDocument.mKmlRoot.buildOverlay(map, null, styler, kmlDocument);
-
-                map.getOverlays().add(kmlOverlay);
-                map.invalidate();
-                bb = kmlDocument.mKmlRoot.getBoundingBox();
-                bb.increaseByScale(1.5f);
-                map.zoomToBoundingBox(bb, true);
-
-                if (mActionMode != null) {
-                    return false;
-                }
-                menu_route = route1.getName();
-                mActionMode = startSupportActionMode(mActionModeCallback);
-
-
-
-
-
-                return true;
-
-
-
-
-            case R.id.menu_route2:
-
-                for(int i=0; i<map.getOverlays().size(); i++) {
-                    String className = map.getOverlays().get(i).getClass().getName();
-                    if (className.equals("org.osmdroid.views.overlay.FolderOverlay")){
-                        map.getOverlays().remove(i);
-                        break;
-                    }
-                }
-
-                try {
-                    jsonStream = route2.getValues();
-                    int size = jsonStream.available();
-                    byte[] buffer = new byte[size];
-                    jsonStream.read(buffer);
-                    jsonStream.close();
-                    jsonString = new String(buffer, StandardCharsets.UTF_8);
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-
-                }
-
-                kmlDocument.parseGeoJSON(jsonString);
-                kmlOverlay = (FolderOverlay) kmlDocument.mKmlRoot.buildOverlay(map, null, styler, kmlDocument);
-                kmlOverlay.setName("asd2");
-                map.getOverlays().add(kmlOverlay);
-                map.invalidate();
-                bb = kmlDocument.mKmlRoot.getBoundingBox();
-                bb.increaseByScale(1.5f);
-                map.zoomToBoundingBox(bb, true);
-
-                if (mActionMode != null) {
-                    return false;
-                }
-                menu_route = route2.getName();
-                mActionMode = startSupportActionMode(mActionModeCallback);
-
-                return true;
-
-
-            case R.id.menu_change:
-
-                getRoutes();
-                return true;
-
-
             case R.id.menu_clear:
-                for(int i=0; i<map.getOverlays().size(); i++) {
-                    String className = map.getOverlays().get(i).getClass().getName();
-                    if (className.equals("org.osmdroid.views.overlay.FolderOverlay")){
-                        map.getOverlays().remove(i);
-                        break;
-                    }
-                }
-
+                clearOverlays("");
+                menuRoute = new Route();
                 map.invalidate();
+
                 return true;
 
             case R.id.menu_logout:
                 finish();
-
                 return true;
 
-
             case R.id.menu_about:
-
                 ImageView image = new ImageView(this);
                 image.setImageResource(R.drawable.eovalue);
-
                 new AlertDialog.Builder(activity)
                         .setView(image)
                         .setTitle("About")
@@ -389,55 +450,50 @@ public class MainActivity extends AppCompatActivity {
 
                 return true;
 
-
             default:
-
                 return super.onOptionsItemSelected(item);
-
         }
     }
 
     private ActionMode.Callback mActionModeCallback = new ActionMode.Callback() {
         @Override
         public boolean onCreateActionMode(ActionMode mode, Menu menu) {
-            mode.getMenuInflater().inflate(R.menu.submenu, menu);
-            mode.setTitle(menu_route);
+            mode.getMenuInflater().inflate(R.menu.action_menu, menu);
 
             return true;
         }
 
         @Override
         public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
-            return false;
+            mode.setTitle(menuRoute.getName());
+            toolbarBot.setBackgroundColor(getColor(R.color.colorPrimaryDark));
+            botMenu.clear();
+            getMenuInflater().inflate(R.menu.bot_menu_find, botMenu);
+
+            return true;
         }
 
         @Override
         public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
             switch (item.getItemId()){
-                case R.id.submenu_find:
-                    Toast.makeText(activity,"submenu_find", Toast.LENGTH_SHORT).show();
+
+                case R.id.action_menu_report:
+                    Toast toast2 = Toast.makeText(activity, menuRoute.getName()+" reported as broken", Toast.LENGTH_SHORT);
+                    toast2.setGravity(Gravity.BOTTOM,0,200);
+                    toast2.show();
 
                     return true;
-                case R.id.submenu_rate:
-                    Toast.makeText(activity,"submenu_rate", Toast.LENGTH_SHORT).show();
 
-                    return true;
-                case R.id.submenu_report:
-                    Toast.makeText(activity,"submenu_report", Toast.LENGTH_SHORT).show();
-
-                    return true;
                 default:
                     return false;
-
             }
-
         }
 
         @Override
         public void onDestroyActionMode(ActionMode mode) {
-            mActionMode = null;
-            menu_route = "";
-
+            actionMode = null;
+            clearOverlays("baseRoute");
+            invalidateOptionsMenu();
         }
     };
 
@@ -448,20 +504,19 @@ public class MainActivity extends AppCompatActivity {
         //SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         //Configuration.getInstance().load(this, PreferenceManager.getDefaultSharedPreferences(this));
         map.onResume(); //needed for compass, my location overlays, v6.0.0 and up
-
     }
 
     public void onPause(){
+        super.onPause();
 
         //save the current location
-        final SharedPreferences.Editor edit = mPrefs.edit();
+        final SharedPreferences.Editor edit = prefs.edit();
         edit.putFloat(PREFS_ORIENTATION, map.getMapOrientation());
         edit.putString(PREFS_LATITUDE_STRING, String.valueOf(map.getMapCenter().getLatitude()));
         edit.putString(PREFS_LONGITUDE_STRING, String.valueOf(map.getMapCenter().getLongitude()));
         edit.putFloat(PREFS_ZOOM_LEVEL_DOUBLE, (float) map.getZoomLevelDouble());
         edit.apply();
 
-        super.onPause();
         //this will refresh the osmdroid configuration on resuming.
         //if you make changes to the configuration, use
         //SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
@@ -469,29 +524,35 @@ public class MainActivity extends AppCompatActivity {
         map.onPause();  //needed for compass, my location overlays, v6.0.0 and up
     }
 
-    public void getRoutes() {
-
-        if (numbers.size()<2){
-            numbers = new ArrayList<>();
-            for (int i = 0; i < routesArray.length(); i++) {
-                numbers.add(i);
+    public void getRoutes(JSONArray mArray) {
+        if (actionMode == null) {
+            if (allRoutesCount.size()<2){
+                allRoutesCount = new ArrayList<>();
+                for (int i = 0; i < mArray.length(); i++) {
+                    allRoutesCount.add(i);
+                }
+                Collections.shuffle(allRoutesCount);
             }
-
-            Collections.shuffle(numbers);
-
+            route1 = getRouteQuery("dict"+ allRoutesCount.get(0));
+            route2 = getRouteQuery("dict"+ allRoutesCount.get(1));
+            allRoutesCount.remove(0);
+            allRoutesCount.remove(0);
+        } else {
+            if (similRoutesCount.size()<2){
+                similRoutesCount = new ArrayList<>();
+                for (int i = 0; i < mArray.length(); i++) {
+                    similRoutesCount.add(i);
+                }
+                Collections.shuffle(similRoutesCount);
+            }
+            routeSimil1 = getRouteQuery("dict"+ similRoutesCount.get(0));
+            routeSimil2 = getRouteQuery("dict"+ similRoutesCount.get(1));
+            similRoutesCount.remove(0);
+            similRoutesCount.remove(0);
         }
-
-        route1 = getRouteQuery("dict"+numbers.get(0));
-        route2 = getRouteQuery("dict"+numbers.get(1));
-
-
-
-        numbers.remove(0);
-        numbers.remove(0);
-
-
     }
 
+    @SuppressWarnings("unused")
     public class Route {
         public String name;
         private String values;
@@ -539,143 +600,140 @@ public class MainActivity extends AppCompatActivity {
 
         private void setIds(String ids) {
             this.ids = ids;
-
-
         }
-
     }
 
     private void checkRoutes() {
-
-
-
-
         RequestQueue queue = Volley.newRequestQueue(this);
         String url ="http://vps510297.ovh.net:3123/api/routes/";
-
-
 
         JsonObjectRequest getRouteRequest = new JsonObjectRequest(Request.Method.POST, url, null,
                 new Response.Listener<JSONObject>() {
 
                     @Override
                     public void onResponse(JSONObject response) {
-
                         if (response.optString("success").equals("true")) {
-
                             try{
-
-
                                 routesArray = response.getJSONArray("route");
-                                //Toast.makeText(getApplicationContext(), routesArray.toString(), Toast.LENGTH_SHORT).show();
-                                for (int i = 0; i < routesArray.length(); i++) {
-                                    numbers.add(i);
-                                }
-
-                                Collections.shuffle(numbers);
-
-                                getRoutes();
-
-
-
-                            }catch (JSONException e){
+                                getRoutes(routesArray);
+                            } catch (JSONException e){
                                 Log.d("Error", e.toString());
                             }
                         }
                     }
                 },
-
                 new Response.ErrorListener() {
                     @Override
-                    public void onErrorResponse(VolleyError error) {
-
-                        Toast.makeText(getApplicationContext(), error.toString(), Toast.LENGTH_SHORT).show();
-
+                    public void onErrorResponse(VolleyError e) {
+                        Log.d("Error", e.toString());
                     }
-
-
-
                 }
         );
-
         queue.add(getRouteRequest);
-
     }
 
-
     private Route getRouteQuery(String name) {
-
         final Route route = new Route();
 
         try {
             RequestQueue queue = Volley.newRequestQueue(this);
             String url ="http://vps510297.ovh.net:3123/api/routes/getRoute";
-
             JSONObject jsonBody = new JSONObject();
-
             jsonBody.put("NAME", name);
 
             JsonObjectRequest getRouteRequest = new JsonObjectRequest(Request.Method.POST, url, jsonBody,
                     new Response.Listener<JSONObject>() {
                         @Override
                         public void onResponse(JSONObject response) {
-                            //Toast.makeText(getApplicationContext(), response.toString(), Toast.LENGTH_SHORT).show();
+                            //Toast.makeText(activity, response.toString(), Toast.LENGTH_SHORT).show();
                             if (response.optString("success").equals("true")) {
-
                                 route.setName(response.optString("name"));
                                 route.setValues(response.optString("values"));
                                 route.setIds(response.optString("ids"));
 
+                                invalidateOptionsMenu();
                             }
                         }
                     },
-
                     new Response.ErrorListener() {
                         @Override
                         public void onErrorResponse(VolleyError error) {
-
                             if (error instanceof NoConnectionError) {
-                                Toast.makeText(getApplicationContext(), getResources().getString(R.string.offline), Toast.LENGTH_SHORT).show();
+                                Toast.makeText(activity, getResources().getString(R.string.offline), Toast.LENGTH_SHORT).show();
                             } else if (error instanceof TimeoutError) {
-                                Toast.makeText(getApplicationContext(), getResources().getString(R.string.server_offline), Toast.LENGTH_LONG).show();
+                                Toast.makeText(activity, getResources().getString(R.string.server_offline), Toast.LENGTH_LONG).show();
                             } else if (error instanceof AuthFailureError) {
-                                Toast.makeText(getApplicationContext(), "AuthFailureError"+error.toString(), Toast.LENGTH_SHORT).show();
+                                Toast.makeText(activity, "AuthFailureError"+error.toString(), Toast.LENGTH_SHORT).show();
                             } else if (error instanceof ServerError) {
                                 NetworkResponse networkResponse = error.networkResponse;
                                 if (networkResponse != null && networkResponse.data != null) {
                                     String jsonError = new String(networkResponse.data);
-
                                     try {
                                         JSONObject errorResponse = new JSONObject(jsonError);
-                                            Toast.makeText(getApplicationContext(), errorResponse.toString(), Toast.LENGTH_SHORT).show();
-
-                                    } catch (JSONException err) {
-                                        Toast.makeText(getApplicationContext(), err.toString(), Toast.LENGTH_LONG).show();
+                                            Toast.makeText(activity, errorResponse.toString(), Toast.LENGTH_SHORT).show();
+                                    } catch (JSONException e) {
+                                        Log.d("Error", e.toString());
                                     }
                                 }
                             } else if (error instanceof NetworkError) {
-                                Toast.makeText(getApplicationContext(), "NetworkError"+error.toString(), Toast.LENGTH_SHORT).show();
+                                Toast.makeText(activity, "NetworkError"+error.toString(), Toast.LENGTH_SHORT).show();
                             } else if (error instanceof ParseError) {
-                                Toast.makeText(getApplicationContext(), "ParseError"+error.toString(), Toast.LENGTH_SHORT).show();
+                                Toast.makeText(activity, "ParseError"+error.toString(), Toast.LENGTH_SHORT).show();
                             }
                         }
                     }
             );
-
             queue.add(getRouteRequest);
         } catch (JSONException e) {
             Log.d("Error", e.toString());
         }
-
         return route;
-
-
-
     }
 
+    private void getSimilarRoutes(String route) {
+        final String routeName = "asd"; // route.replace("Route ","dict");!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        final JSONArray routeArray = new JSONArray();
 
+        try {
+            RequestQueue queue = Volley.newRequestQueue(this);
+            String url ="http://vps510297.ovh.net:3123/api/routes/getSimilar";
+            JSONObject jsonBody = new JSONObject();
+            jsonBody.put("NAME", routeName);
 
+            JsonObjectRequest loginRequest = new JsonObjectRequest(Request.Method.POST, url, jsonBody, new Response.Listener<JSONObject>() {
+                @Override
+                public void onResponse(JSONObject response) {
+                    if (response.optString("success").equals("true")) {
+                        try {
+                            JSONObject route = response.getJSONObject("route");
+                            routesSimilarArray = route.optJSONArray("similars");
+                            getRoutes(routesSimilarArray);
+                        } catch (JSONException e) {
+                            Log.d("Error", e.toString());
+                        }
+                    }
+                }
+            },
+                    new Response.ErrorListener() {
+                        @Override
+                        public void onErrorResponse(VolleyError e) {
+                            Log.d("Error", e.toString());
+                        }
+                    });
+            queue.add(loginRequest);
+        } catch (JSONException e) {
+            Log.d("Error", e.toString());
+        }
+    }
+
+    @SuppressWarnings("deprecation")
     class MyKmlStyler implements KmlFeature.Styler {
+
+        private int sColor;
+
+        private MyKmlStyler(int color) {
+            sColor = color;
+        }
 
         @Override
         public void onFeature(Overlay overlay, KmlFeature kmlFeature) {
@@ -687,8 +745,8 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onLineString(Polyline polyline, KmlPlacemark kmlPlacemark, KmlLineString kmlLineString){
-            polyline.setWidth(3.0f);
-            polyline.setColor(Color.RED);
+            polyline.setWidth(8.0f);
+            polyline.setColor(sColor);
         }
 
         @Override
@@ -698,8 +756,6 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onTrack(Polyline polyline, KmlPlacemark kmlPlacemark, KmlTrack kmlTrack) {
         }
-
-
     }
 }
 
