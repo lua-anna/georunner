@@ -3,14 +3,11 @@
 
     <item
         android:id="@+id/menu_route1"
-
-
         android:title="@string/route1"
         app:showAsAction="always" />
 
     <item
         android:id="@+id/menu_route2"
-
         android:title="@string/route2"
         app:showAsAction="always" />
 

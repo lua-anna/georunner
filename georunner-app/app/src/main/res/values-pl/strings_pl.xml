@@ -38,5 +38,6 @@
     <string name="accept">Zaakceptuj trasę</string>
     <string name="cancel">Anuluj</string>
     <string name="choose_route">Wybierz jedną z proponowanych tras</string>
+    <string name="policy">Polityka prywatności</string>
 
 </resources>

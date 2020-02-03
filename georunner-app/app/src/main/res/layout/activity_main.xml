@@ -18,6 +18,8 @@
         android:theme="@style/AppTheme"
         app:popupTheme="@style/AppTheme" />
 
+
+
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbarBot"
         android:layout_width="match_parent"
@@ -30,7 +32,10 @@
         app:contentInsetRight="0dp"
         app:contentInsetEnd="0dp"
         android:theme="@style/ThemeOverlay.AppCompat.Dark"
-        app:popupTheme="@style/ThemeOverlay.AppCompat.Light" />
+        app:popupTheme="@style/ThemeOverlay.AppCompat.Light">
+
+
+    </androidx.appcompat.widget.Toolbar>
 
 
     <RelativeLayout

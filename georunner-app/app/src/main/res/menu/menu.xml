@@ -14,5 +14,9 @@
         android:title="@string/about"
         app:showAsAction="never"/>
 
+    <item android:id="@+id/menu_policy"
+        android:title="@string/policy"
+        app:showAsAction="never"/>
+
 </menu>
 

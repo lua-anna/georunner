@@ -58,7 +58,7 @@ public class SignupActivity extends AppCompatActivity {
 
         try {
             RequestQueue queue = Volley.newRequestQueue(this);
-            String url ="http://vps510297.ovh.net:3123/api/users/register";
+            String url ="http://vps781559.ovh.net:3123/api/users/register";
 
             JSONObject jsonBody = new JSONObject();
 
@@ -74,7 +74,7 @@ public class SignupActivity extends AppCompatActivity {
                 public void onResponse(JSONObject response) {
                     //Toast.makeText(getApplicationContext(), response.toString(), Toast.LENGTH_SHORT).show();
                     if (!response.optString("_id").equals("")) {
-                        Toast.makeText(getApplicationContext(), getResources().getString(R.string.signed_up), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getApplicationContext(), getResources().getString(R.string.signed_up), Toast.LENGTH_LONG).show();
                         finish();
                     }
                 }

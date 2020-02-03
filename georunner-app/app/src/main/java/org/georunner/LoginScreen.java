@@ -121,7 +121,7 @@ public class LoginScreen extends AppCompatActivity {
     private void loginQuery() {
         try {
             RequestQueue queue = Volley.newRequestQueue(this);
-            String url ="http://vps510297.ovh.net:3123/api/users/login";
+            String url ="http://vps781559.ovh.net:3123/api/users/login";
 
             JSONObject jsonBody = new JSONObject();
 

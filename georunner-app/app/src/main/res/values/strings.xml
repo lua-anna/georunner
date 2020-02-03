@@ -38,5 +38,6 @@
     <string name="accept">Accept route</string>
     <string name="cancel">Cancel</string>
     <string name="choose_route">Choose one of the suggested routes</string>
+    <string name="policy">Privacy policy</string>
 
 </resources>
