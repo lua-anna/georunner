@@ -1,7 +1,6 @@
 # georunner
 
-<h1>Georunner site:</h1>
-[-> 10.02.2020] www.datalions.eu/projects/georunner
+App for returning the best routes for walking and running based on user preferences.
 
 <h1>Georunner folders:</h1>
 georunner-apk - ready application for download<br>
