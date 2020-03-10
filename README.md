@@ -14,15 +14,17 @@ DMP-Georunner.pdf - Data Management Plan, our source for data
 
 <b>Privacy Policy</b>
 
-What personal data does GeoRunner collect? 
+What personal data does GeoRunner collect?
+<br>
 In order to create and maintain an account of the User, the following data are collected: 
-a) To create a User account: 
+<br>
+a) To create a User account: <br>
     - an email address;
-Log Files:
+<br>Log Files:<br>
 As with most other websites, we collect and use the data contained in log files. The information in the log files include your IP (internet protocol) address, your ISP (internet service provider, such as AOL or Shaw Cable), the browser you used to visit our site (such as Internet Explorer or Firefox), the time you visited our site.
-Information We Collect & How We Use It:
+<b><br><br>Information We Collect & How We Use It:<br></B>
 GeoRunner doesn’t make money from ads, so we don’t collect data in order to advertise to you. 
-Information Disclosure:
+<br>Information Disclosure:
 GeoRunner won’t transfer information about you to third parties for the purpose of providing or facilitating third-party advertising to you. We won’t sell information about you to a third-party.
-Contact:
-In case of questions please write to datalions@outlook.com
+<br>Contact:
+in case of questions please write to datalions@outlook.com
