@@ -11,8 +11,10 @@ georunner-web - website with map (in progress)
 
 test.mp4 - a video for using application<br>
 DMP-Georunner.pdf - Data Management Plan, our source for data
+<br><br>
+<b>The code and the app is licensed under the EUPL-1.2-or-later. More information <a href="https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12">here</a>. </b>
 
-<b>Privacy Policy</b>
+<h1>Privacy Policy</h1>
 
 What personal data does GeoRunner collect?
 <br>
