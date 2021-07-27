@@ -29,4 +29,4 @@ GeoRunner doesn’t make money from ads, so we don’t collect data in order to 
 <br>Information Disclosure:
 GeoRunner won’t transfer information about you to third parties for the purpose of providing or facilitating third-party advertising to you. We won’t sell information about you to a third-party.
 <br>Contact:
-in case of questions please write to datalions@outlook.com
+in case of questions please write to a.gozdzielewska@datalions.eu
